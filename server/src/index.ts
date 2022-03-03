@@ -10,8 +10,9 @@ import { buildSchema } from 'type-graphql';
 import { HelloResolver } from './resolvers/hello';
 import { PostResolver } from './resolvers/post';
 import { UserResolver } from './resolvers/user';
-import { __prod__ } from './constants';
+import { COOKIE_NAME, __prod__ } from './constants';
 import { MyContext } from './types';
+import cors from 'cors';
 
 /** Declaration merging */
 declare module 'express-session' {
@@ -28,11 +29,21 @@ const main = async () => {
   const redisClient = new Redis(process.env.REDIS_URL);
 
   const app = express();
+  app.set('trust proxy', process.env.NODE_ENV !== 'production');
+  app.use(
+    cors({
+      origin: [
+        "http://localhost:3000",
+        "https://studio.apollographql.com"
+      ],
+      credentials: true,
+    })
+  );
 
   /** Must be done before adding the apollo middleware as ordering matters */
   app.use(
     session({
-      name: 'qid',
+      name: COOKIE_NAME,
       store: new RedisStore({
         client: redisClient,
         disableTouch: true,
@@ -40,8 +51,9 @@ const main = async () => {
       cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
         httpOnly: true,
-        sameSite: 'lax', // Protecting against csrf
-        secure: __prod__,
+        sameSite: 'none', // Protecting against csrf
+        //sameSite: 'lax', // Protecting against csrf, doesnt' set cookie
+        secure: true,
       },
       saveUninitialized: false,
       secret: "hello" || process.env.REDIS_SESSION_SECRET,
@@ -66,7 +78,11 @@ const main = async () => {
   });
 
   await apolloServer.start();
-  apolloServer.applyMiddleware({ app });
+  apolloServer.applyMiddleware({ 
+    app,
+    cors: false
+  });
+
   app.get('/',  (_, res) => {
     res.send('Hello');
   });

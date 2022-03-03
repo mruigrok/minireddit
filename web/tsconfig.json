@@ -8,7 +8,11 @@
     ],
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": false,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,                   /* Report error when not all code paths in function return a value. */
+    "noFallthroughCasesInSwitch": true,          /* Report errors for fallthrough cases in switch statement. */
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "incremental": true,

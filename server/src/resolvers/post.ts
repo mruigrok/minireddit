@@ -1,3 +1,4 @@
+import { sleep } from "../helpers/sleep";
 import { Arg, Ctx, Query, Resolver, Mutation, Int } from "type-graphql";
 import { Post } from "../entities/Post";
 import { MyContext } from "../types";
@@ -11,7 +12,9 @@ export class PostResolver {
    * Returns all posts.
    */
   @Query(() => [Post])
-  posts(@Ctx() { em }: MyContext): Promise<Post[]> {
+  async posts(@Ctx() { em }: MyContext): Promise<Post[]> {
+    // DEBUG: Showing the difference in server side rendering
+    await sleep(3000);
     return em.find(Post, {});
   };
 

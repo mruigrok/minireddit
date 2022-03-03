@@ -1,5 +1,16 @@
 import argon2 from 'argon2';
-import { Arg, Ctx, Field, InputType, Mutation, ObjectType, Query, Resolver } from "type-graphql";
+import { COOKIE_NAME, COOKIE_OPTIONS } from '../constants';
+import { 
+  Arg, 
+  Ctx, 
+  Field, 
+  InputType, 
+  Mutation, 
+  ObjectType, 
+  Query, 
+  Resolver 
+} from "type-graphql";
+//import { EntityManager } from '@mikro-orm/postgresql';
 import { User } from '../entities/User';
 import { MyContext } from "../types";
 
@@ -66,7 +77,7 @@ export class UserResolver {
   @Mutation(() => UserResponseObject)
   async register(
     @Arg("options", () => UsernamePasswordInput) options: UsernamePasswordInput,
-    @Ctx() { em }: MyContext
+    @Ctx() { em, req }: MyContext
   ): Promise<UserResponseObject> {
     const errors = [];
     if (options.username.length <= 4) {
@@ -84,7 +95,6 @@ export class UserResolver {
     if (errors.length > 0) {
       return { errors };
     }
-
     const hashedPassword =  await argon2.hash(options.password);
     const userOptions: any = {
       username: options.username,
@@ -94,7 +104,10 @@ export class UserResolver {
     };
     const user = em.create(User, userOptions);
     await em.persistAndFlush(user).catch((err) => {
-      if (err.code === EXISTING_USERNAME_ERROR_CODE) {
+      if (
+        err.code === EXISTING_USERNAME_ERROR_CODE || 
+        err.detail.includes("already exists")
+      ) {
         errors.push({
           field: "username",
           message: "username is already taken"
@@ -105,6 +118,7 @@ export class UserResolver {
     if (errors.length > 0) {
       return { errors }
     } else {
+      req.session.userId = user.id;
       return { user }
     }
   };
@@ -142,4 +156,23 @@ export class UserResolver {
     req.session.userId = user.id;
     return { user };
   };
+
+  /**
+   * Logout by clearing the cookie and destroying the current session
+   */
+  @Mutation(() => Boolean)
+  logout(@Ctx() { req, res }: MyContext) {
+    return new Promise((resolve) => {
+      req.session.destroy((err) => {
+        console.log(COOKIE_NAME);
+        res.clearCookie(COOKIE_NAME, COOKIE_OPTIONS);
+        if (err) {
+          console.log(err);
+          resolve(false)
+          return
+        }
+        resolve(true)
+      })
+    })
+  }
 };
