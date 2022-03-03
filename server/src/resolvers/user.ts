@@ -53,6 +53,7 @@ export class UserResolver {
   async me(
     @Ctx() { em, req }: MyContext
   ) {
+    console.log(req.session);
     if(!req.session.userId) {
       return null;
     }
