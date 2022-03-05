@@ -3,8 +3,8 @@ import 'reflect-metadata';
 import express from 'express';
 import session from 'express-session';
 import Redis from 'ioredis';
-import mikroOrmConfig from './mikro-orm.config';
-import { MikroORM } from '@mikro-orm/core';
+import connectRedis from 'connect-redis';
+import cors from 'cors';
 import { ApolloServer } from 'apollo-server-express';
 import { buildSchema } from 'type-graphql';
 import { HelloResolver } from './resolvers/hello';
@@ -12,21 +12,30 @@ import { PostResolver } from './resolvers/post';
 import { UserResolver } from './resolvers/user';
 import { COOKIE_NAME, __prod__ } from './constants';
 import { MyContext } from './types';
-import cors from 'cors';
+import { createConnection } from 'typeorm';
+import { User } from './entities/User';
+import { Post } from './entities/Post';
 
 /** Declaration merging */
 declare module 'express-session' {
   interface Session {
     userId: number;
   }
-}
+};
 
 const main = async () => {
-  const orm = await MikroORM.init(mikroOrmConfig);
-  await orm.getMigrator().up();
+  await createConnection({
+    type: 'postgres',
+    database: 'minireddit',
+    username: process.env.POSTGRES_USER,
+    password: process.env.POSTGRES_PASSWORD,
+    logging: true,
+    synchronize: true,
+    entities: [Post, User]
+  });
 
-  const RedisStore = require("connect-redis")(session);
-  const redisClient = new Redis(process.env.REDIS_URL);
+  const RedisStore = connectRedis(session);
+  const redis = new Redis(process.env.REDIS_URL);
 
   const app = express();
   app.set('trust proxy', process.env.NODE_ENV !== 'production');
@@ -45,7 +54,7 @@ const main = async () => {
     session({
       name: COOKIE_NAME,
       store: new RedisStore({
-        client: redisClient,
+        client: redis,
         disableTouch: true,
       }),
       cookie: {
@@ -70,10 +79,10 @@ const main = async () => {
       ],
       validate: false,
     }),
-    context: ({ req, res }): MyContext => ({ 
-      em: orm.em, 
+    context: ({ req, res }): MyContext => ({
       req, 
-      res
+      res,
+      redis
     })
   });
 

@@ -3,6 +3,9 @@ import { NavBar } from "../components/NavBar"
 import { usePostsQuery } from "../generated/graphql";
 import { createUrqlClient } from "../utils/createUrqlClient";
 
+// Server-side render content that can be searchable or appear in a google search
+// Or dynamic data
+// Pages like the login and register are static and can be client-side rendered
 const Index = () => {
   const [{ data }] = usePostsQuery();
   return (
@@ -15,4 +18,4 @@ const Index = () => {
   );
 };
 
-export default withUrqlClient(createUrqlClient)(Index);
+export default withUrqlClient(createUrqlClient,  { ssr: true })(Index);
