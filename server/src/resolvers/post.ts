@@ -7,9 +7,13 @@ import { Arg,
   InputType, 
   Field, 
   Ctx, 
-  UseMiddleware
+  UseMiddleware,
+  Int,
+  FieldResolver,
+  Root
 } from "type-graphql";
 import { Post } from "../entities/Post";
+import { getConnection } from "typeorm";
 
 @InputType()
 class PostInput {
@@ -22,16 +26,29 @@ class PostInput {
 /**
  * Post Resolver class
  */
-@Resolver()
+@Resolver(Post)
 export class PostResolver {
   /**
    * Returns all posts.
    */
   @Query(() => [Post])
-  async posts(): Promise<Post[]> {
-    // DEBUG: Showing the difference in server side rendering
-    // await sleep(3000);
-    return Post.find();
+  async posts(
+    @Arg('limit', () => Int) limit: number,
+    @Arg('cursor', () => String, { nullable: true }) cursor: string | null
+  ): Promise<Post[]> {
+    const realLimit = Math.min(50, limit);
+    const qb = getConnection()
+      .getRepository(Post)
+      .createQueryBuilder('p')
+      .orderBy('"createdAt"', 'DESC')
+      .take(realLimit)
+
+      if (cursor){
+        qb.where('"createdAt" < :cursor', { 
+          cursor: new Date(parseInt(cursor)) 
+        })
+      }
+      return qb.getMany()
   };
 
   /**
@@ -84,4 +101,12 @@ export class PostResolver {
     await Post.delete(id);
     return true;
   };
+
+  @FieldResolver(() => String)
+  textSnippet(
+    @Root() root: Post,
+  ) {
+    // Only load a snippet of the text
+    return root.text.slice(0, 100);
+  }
 }

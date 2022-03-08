@@ -5,6 +5,7 @@ import session from 'express-session';
 import Redis from 'ioredis';
 import connectRedis from 'connect-redis';
 import cors from 'cors';
+import path from 'path';
 import { ApolloServer } from 'apollo-server-express';
 import { buildSchema } from 'type-graphql';
 import { HelloResolver } from './resolvers/hello';
@@ -24,13 +25,14 @@ declare module 'express-session' {
 };
 
 const main = async () => {
-  await createConnection({
+  const conn = await createConnection({
     type: 'postgres',
     database: 'minireddit',
     username: process.env.POSTGRES_USER,
     password: process.env.POSTGRES_PASSWORD,
     logging: true,
     synchronize: true,
+    migrations: [path.join(__dirname, './migrations/*')],
     entities: [Post, User]
   });
 

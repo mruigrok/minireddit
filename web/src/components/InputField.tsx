@@ -6,7 +6,7 @@ type InputFieldProps = InputHTMLAttributes<HTMLInputElement> & {
   label: string;
   placeholder: string;
   name: string;
-  textarea: boolean
+  textarea?: boolean;
 };
 
 export const InputField: React.FC<InputFieldProps> = ({ 

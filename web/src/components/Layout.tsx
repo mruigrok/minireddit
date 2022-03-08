@@ -6,7 +6,7 @@ interface LayoutProps {
   variant?: WrapperVariant
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, variant }): JSX.Element => {
+const Layout: React.FC<LayoutProps> = ({ children, variant }): JSX.Element => {
   return (
     <>
       <NavBar />
@@ -16,3 +16,5 @@ export const Layout: React.FC<LayoutProps> = ({ children, variant }): JSX.Elemen
     </>
   );
 }
+
+export default Layout;
