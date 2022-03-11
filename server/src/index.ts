@@ -25,7 +25,7 @@ declare module 'express-session' {
 };
 
 const main = async () => {
-  const conn = await createConnection({
+  await createConnection({
     type: 'postgres',
     database: 'minireddit',
     username: process.env.POSTGRES_USER,
@@ -35,6 +35,8 @@ const main = async () => {
     migrations: [path.join(__dirname, './migrations/*')],
     entities: [Post, User]
   });
+  //conn.runMigrations();
+  // await Post.delete({});
 
   const RedisStore = connectRedis(session);
   const redis = new Redis(process.env.REDIS_URL);

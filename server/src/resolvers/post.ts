@@ -10,7 +10,8 @@ import { Arg,
   UseMiddleware,
   Int,
   FieldResolver,
-  Root
+  Root,
+  ObjectType
 } from "type-graphql";
 import { Post } from "../entities/Post";
 import { getConnection } from "typeorm";
@@ -23,6 +24,13 @@ class PostInput {
   text!: string
 }
 
+@ObjectType()
+class PaginatedPosts {
+  @Field(() => [Post])
+  posts!: Post[]
+  @Field()
+  hasMore!: boolean
+}
 /**
  * Post Resolver class
  */
@@ -31,24 +39,31 @@ export class PostResolver {
   /**
    * Returns all posts.
    */
-  @Query(() => [Post])
+  @Query(() => PaginatedPosts)
   async posts(
     @Arg('limit', () => Int) limit: number,
     @Arg('cursor', () => String, { nullable: true }) cursor: string | null
-  ): Promise<Post[]> {
+  ): Promise<PaginatedPosts> {
     const realLimit = Math.min(50, limit);
+    const realLimitPlusOne = realLimit + 1;
     const qb = getConnection()
       .getRepository(Post)
       .createQueryBuilder('p')
       .orderBy('"createdAt"', 'DESC')
-      .take(realLimit)
+      .take(realLimitPlusOne)
 
       if (cursor){
         qb.where('"createdAt" < :cursor', { 
           cursor: new Date(parseInt(cursor)) 
         })
       }
-      return qb.getMany()
+
+      const posts = await qb.getMany();
+      console.log(posts.length);
+      return { 
+        posts: posts.slice(0, realLimit),
+        hasMore: posts.length === realLimitPlusOne,
+      }
   };
 
   /**

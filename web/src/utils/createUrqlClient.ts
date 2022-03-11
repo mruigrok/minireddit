@@ -1,5 +1,5 @@
-import { dedupExchange, Exchange, fetchExchange } from "urql";
-import { cacheExchange } from "@urql/exchange-graphcache";
+import { dedupExchange, Exchange, fetchExchange, stringifyVariables } from "urql";
+import { cacheExchange, Resolver } from "@urql/exchange-graphcache";
 import { 
   LoginMutation,
   MeQuery,
@@ -9,6 +9,43 @@ import {
 import { betterUpdateQuery } from '../utils/betterUpdateQuery';
 import  Router from "next/router";
 import { pipe, tap } from 'wonka';
+
+export const cursorPagination = (): Resolver => {
+  return (_parent, fieldArgs, cache, info) => {
+    const { parentKey: entityKey, fieldName } = info;
+    const allFields = cache.inspectFields(entityKey);
+    const fieldInfos = allFields.filter((info) => info.fieldName === fieldName);
+    const size = fieldInfos.length;
+    if (size === 0) {
+      return undefined;
+    }
+    
+    const results: string[] = [];
+    const fieldKey = `${fieldName}(${stringifyVariables(fieldArgs)})`;
+    const isItInTheCache = cache.resolve(
+      cache.resolve({ __typename: 'Query' }, fieldKey) as string,
+      "posts"
+    );
+
+    info.partial = !isItInTheCache;
+    let hasMore = true;
+    fieldInfos.forEach((fi) => {
+      const key = cache.resolve({ __typename: 'Query' }, fi.fieldKey) as string;
+      const data = cache.resolve(key, fi.fieldName) as string[];
+      const _hasMore = cache.resolve(key, "hasMore");
+      if (!_hasMore) {
+        hasMore = _hasMore as boolean;
+      }
+      results.push(...data);
+    });
+
+    return {
+      __typename: "PaginatedPosts",
+      hasMore,
+      posts: results
+    };
+  }; 
+};
 
 const errorExchange: Exchange = ({ forward }) => (ops$) => {
   return pipe(
@@ -32,6 +69,14 @@ export const  createUrqlClient = ((ssrExchange: any) => ({
   exchanges: [
     dedupExchange, 
     cacheExchange({
+      keys: {
+        PaginatedPosts: () => null,
+      },
+      resolvers: {
+        Query: {
+          posts: cursorPagination(),
+        },
+      },
       updates: {
         Mutation: {
           logout:(_result, args, cache, info) => {
