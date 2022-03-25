@@ -16,6 +16,7 @@ import { MyContext } from './types';
 import { createConnection } from 'typeorm';
 import { User } from './entities/User';
 import { Post } from './entities/Post';
+import { Updoot } from './entities/Updoot';
 
 /** Declaration merging */
 declare module 'express-session' {
@@ -33,7 +34,7 @@ const main = async () => {
     logging: true,
     synchronize: true,
     migrations: [path.join(__dirname, './migrations/*')],
-    entities: [Post, User]
+    entities: [Post, User, Updoot]
   });
   //conn.runMigrations();
   // await Post.delete({});

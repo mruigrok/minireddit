@@ -9,13 +9,14 @@ import {
   Arg, 
   Ctx, 
   Field, 
+  FieldResolver, 
   InputType, 
   Mutation, 
   ObjectType, 
   Query, 
-  Resolver 
+  Resolver, 
+  Root
 } from "type-graphql";
-//import { EntityManager } from '@mikro-orm/postgresql';
 import { User } from '../entities/User';
 import { MyContext } from "../types";
 import { validateRegister } from '../helpers/validateRegister';
@@ -65,8 +66,16 @@ class UserResponseObject {
 /**
  * User Resolver class
  */
-@Resolver()
+@Resolver(User)
 export class UserResolver {
+  @FieldResolver(() => String)
+  email(@Root() user: User, @Ctx() { req }: MyContext) {
+    if (req.session.userId === user.id) {
+      return user.email;
+    }
+
+    return "";
+  }
   /**
    * Return the userId from the current session
    */
