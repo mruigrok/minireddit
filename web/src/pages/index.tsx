@@ -1,3 +1,4 @@
+import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
 import { Box, Button, Flex, Heading, Link, Stack, Text } from "@chakra-ui/react";
 import { withUrqlClient } from "next-urql";
 import NextLink from 'next/link';
@@ -34,12 +35,22 @@ const Index = () => {
       { !data ? (
         <div> Loading yo... </div>
       ) : (
-        <Stack spacing={6}>
+        <Stack spacing={8}>
           { data.posts.posts.map((p) => (
-            <Box key={p.id} p={5} shadow='md' borderWidth="1px">
-              <Heading fontSize='xl'> { p.title } </Heading>
-              <Text mt={4}> { p.textSnippet} </Text>
-            </Box>
+            <Flex key={p.id} p={5} shadow="md" borderWidth={"1px"} >
+              <Box>
+                <Flex direction="column" justifyContent={"center"}>
+                  <ChevronUpIcon boxSize={"24px"}/>
+                  {p.points}
+                  <ChevronDownIcon boxSize={"24px"}/>
+                </Flex>
+                <Box>
+                  <Heading fontSize='xl'> { p.title } </Heading>
+                  <Text> Posted by: { p.creator.username } </Text>
+                  <Text mt={4}> { p.textSnippet} </Text>
+                </Box>
+              </Box>
+            </Flex>
           ))}
         </Stack> 
         )
