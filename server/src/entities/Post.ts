@@ -31,12 +31,15 @@ export class Post extends BaseEntity {
   text!: string;
 
   @Field(() => Int)
-  @Column()
-  creatorId!: number;
-
-  @Field(() => Int)
   @Column({ type: "int", default: 0})
   points!: number;
+
+  @Field(() => Int, { nullable: true })
+  voteStatus!: number | null;
+
+  @Field(() => Int)
+  @Column()
+  creatorId!: number;
 
   @Field()
   @ManyToOne(() => User, user => user.posts)
