@@ -33,6 +33,9 @@ export const UpdootSection: React.FC<UpdootSectionProps> = ({ post }): JSX.Eleme
           icon={<ChevronUpIcon color={
             post.voteStatus === 1 ? "green" : undefined
           }/>}
+          color={
+            post.voteStatus === 1 ? "green" : undefined
+          }
         />
         {post.points}
         <IconButton 
